@@ -7,6 +7,7 @@ import traceback
 import json
 import notificator
 import getpass
+import logging
 
 from pythonBitvavoApi.bitvavo import Bitvavo
 
@@ -25,6 +26,7 @@ class CryptoTrader:
             self.s = sched.scheduler(time.time, time.sleep)
             self.s.enter(1, 1, self.loop)
             self.s.run()
+            logging.basicConfig(filename='cryptotrader.log',level=logging.DEBUG)
         except Exception as e:
             print(str(e))
 
@@ -73,51 +75,44 @@ class CryptoTrader:
             exit(0)
     '''
     main loop:
-    1. lookup balance for EUR and LTC
-    2. lookup stock price for LTC and store it in the sqlite database
-    3. calculate direction by summing difference for the last 3 days
-    4. i 
     '''
     def loop(self):
         # get balance
         response = self.bitvavo.balance({})
         for item in response:
-            print(json.dumps(item, indent=4))
+            logging.info(json.dumps(item, indent=4))
             if item["symbol"] == "EUR":
                 euro = float(item["available"])
             elif item["symbol"] == "LTC":
                 ltc = float(item["available"])
-        print(euro)
-        print(ltc)
         # get current LTC stock price and price history
         response = self.bitvavo.tickerPrice({"market" : self.config["market"]})
-        print(json.dumps(response, indent=4))
+        logging.info(json.dumps(response, indent=4))
         current_price = float(response["price"])
         self.conn.execute("INSERT INTO HISTORY (market, value) VALUES (?, ?)", (self.config["market"], current_price))
         self.conn.commit()
         # determine if the trend is upward or downward
         cursor = self.conn.execute("SELECT value FROM HISTORY WHERE market=? AND timestamp>datetime('now', '-3 days') ORDER BY timestamp ASC;", (self.config["market"],))
         prices = cursor.fetchall()
-        print(prices)
         direction = 0.0
         for i in range(1, len(prices)):
             price = prices[i][0]
             previous_price = prices[i-1][0]
             direction = price - previous_price
         # if current_price
-        print(current_price) 
+        logging.info(current_price) 
         if current_price > (0.95 * self.config["sell-limit"]):
-            print("Trying to SELL")
+            logging.info("Trying to SELL")
             amount = self.config["sell-cap"] / current_price if ltc * current_price > self.config["sell-cap"] else ltc
             if amount != 0:
                 self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nSell limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["sell-limit"], current_price, direction))
-                #response = bitvavo.placeOrder(self.config["market"], 'sell', 'limit', { 'amount': amount, 'price': self.config["sell-limit"] })
+                response = bitvavo.placeOrder(self.config["market"], 'sell', 'limit', { 'amount': amount, 'price': self.config["sell-limit"] })
         if current_price < (1.05 * self.config["buy-limit"]):
-            print("Trying to BUY")
+            logging.info("Trying to BUY")
             amount = self.config["buy-cap"] / current_price if euro > self.config["buy-cap"] else euro / current_price
             if amount !=0:
                 self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nBuy limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["buy-limit"], current_price, direction))
-                #response = bitvavo.placeOrder(self.config["market"], 'buy', 'limit', { 'amount': amount, 'price': self.config["buy-limit"] })
+                response = bitvavo.placeOrder(self.config["market"], 'buy', 'limit', { 'amount': amount, 'price': self.config["buy-limit"] })
         self.s.enter(self.config["polling-time"], 1, self.loop)
 
 CryptoTrader()
