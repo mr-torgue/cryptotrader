@@ -1,3 +1,4 @@
 *.enc
 *.db
 *.pyc
+*.log

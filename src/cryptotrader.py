@@ -8,6 +8,7 @@ import json
 import notificator
 import getpass
 import logging
+import datetime
 
 from pythonBitvavoApi.bitvavo import Bitvavo
 
@@ -19,6 +20,7 @@ class CryptoTrader:
     def __init__(self):
         self.get_config()
         try:
+            logging.basicConfig(filename='cryptotrader.log',level=logging.DEBUG)
             self.verify_config()
             self.bitvavo = Bitvavo({"apikey" : self.config["bitvavokey"], "apisecret" : self.config["bitvavosecret"]})
             self.conn = sqlite3.connect(self.config["db"])
@@ -26,7 +28,6 @@ class CryptoTrader:
             self.s = sched.scheduler(time.time, time.sleep)
             self.s.enter(1, 1, self.loop)
             self.s.run()
-            logging.basicConfig(filename='cryptotrader.log',level=logging.DEBUG)
         except Exception as e:
             print(str(e))
 
@@ -67,16 +68,20 @@ class CryptoTrader:
         self.config["polling-time"] = float(self.config["polling-time"])
         for key in self.config:
             if key == "bitvavokey" or key == "bitvavosecret":
-                print("\t%s: %s%s" % (key, self.config[key][:16], (len(self.config[key]) - 16) * '*'))
+                print("\t%s: '%s%s%s'" % (key, self.config[key][:16], (len(self.config[key]) - 17) * '*', self.config[key][-1]))
             else:
-                print("\t%s: %s" % (key, self.config[key]))
+                print("\t%s: '%s'" % (key, self.config[key]))
         print("Is the config correct (Y/N)?")
         if input() != "Y":
             exit(0)
+
     '''
     main loop:
     '''
     def loop(self):
+        last_sell = 0
+        last_buy = 0
+        interval = 86400 # 24*60*60 in seconds
         # get balance
         response = self.bitvavo.balance({})
         for item in response:
@@ -101,18 +106,23 @@ class CryptoTrader:
             direction = price - previous_price
         # if current_price
         logging.info(current_price) 
-        if current_price > (0.95 * self.config["sell-limit"]):
-            logging.info("Trying to SELL")
-            amount = self.config["sell-cap"] / current_price if ltc * current_price > self.config["sell-cap"] else ltc
+        current_time = datetime.datetime.now().timestamp()
+        if current_price > (0.95 * self.config["sell-limit"]) and (current_time - last_sell) > interval:
+            amount = round(self.config["sell-cap"] / current_price if ltc * current_price > self.config["sell-cap"] else ltc, 2)
+            logging.info("Trying to SELL %f LTC for %f a piece.\nTotal: %f\nCurrent price: %f" % (amount, self.config["sell-limit"], amount * self.config["sell-limit"], current_price))
             if amount != 0:
                 self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nSell limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["sell-limit"], current_price, direction))
-                response = bitvavo.placeOrder(self.config["market"], 'sell', 'limit', { 'amount': amount, 'price': self.config["sell-limit"] })
-        if current_price < (1.05 * self.config["buy-limit"]):
-            logging.info("Trying to BUY")
-            amount = self.config["buy-cap"] / current_price if euro > self.config["buy-cap"] else euro / current_price
+                response = self.bitvavo.placeOrder(self.config["market"], 'sell', 'limit', { 'amount': str(amount), 'price': str(self.config["sell-limit"]) })
+                last_sell = current_time
+                logging.info(response)
+        if current_price < (1.05 * self.config["buy-limit"]) and (current_time - last_buy) > interval:
+            amount = round(self.config["buy-cap"] / current_price if euro > self.config["buy-cap"] else euro / current_price, 2)
+            logging.info("Trying to BUY %f LTC for %f a piece.\nTotal: %f\nCurrent price: %f" % (amount, self.config["buy-limit"], amount * self.config["buy-limit"], current_price))
             if amount !=0:
                 self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nBuy limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["buy-limit"], current_price, direction))
-                response = bitvavo.placeOrder(self.config["market"], 'buy', 'limit', { 'amount': amount, 'price': self.config["buy-limit"] })
+                response = self.bitvavo.placeOrder(self.config["market"], 'buy', 'limit', { 'amount': str(amount), 'price': str(self.config["buy-limit"]) })
+                last_buy = current_time
+                logging.info(response)
         self.s.enter(self.config["polling-time"], 1, self.loop)
 
 CryptoTrader()
