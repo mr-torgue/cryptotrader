@@ -51,3 +51,5 @@ sudo systemctl start cryptotrader.service
 * Add more crypto currencies
 * Secure notifications using PGP
 * Add an API so the notifications mail can contain a confirmation link
+* Use ML to get good limits
+* Create an android app
