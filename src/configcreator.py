@@ -49,9 +49,9 @@ create_db(filename)
 
 # bitvavo kay and secret:
 print("Enter bitvavo API key")
-config["bitvavokey"] = input()
+config["bitvavokey"] = getpass.getpass()
 print("Enter bitvavo API secret")
-config["bitvavosecret"] = input()
+config["bitvavosecret"] = getpass.getpass()
 
 # serialize object and convert is to base 64 string
 pickledconfig_b64 = codecs.encode(pickle.dumps(config), "base64").decode()

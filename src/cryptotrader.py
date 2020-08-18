@@ -63,7 +63,11 @@ class CryptoTrader:
         self.config["sell-cap"] = float(self.config["sell-cap"])
         self.config["buy-cap"] = float(self.config["buy-cap"])
         self.config["polling-time"] = float(self.config["polling-time"])
-        print(json.dumps(self.config, indent=4))
+        for key in self.config:
+            if key == "bitvavokey" or key == "bitvavosecret":
+                print("\t%s: %s%s" % (key, self.config[key][:16], (len(self.config[key]) - 16) * '*'))
+            else:
+                print("\t%s: %s" % (key, self.config[key]))
         print("Is the config correct (Y/N)?")
         if input() != "Y":
             exit(0)
@@ -102,12 +106,14 @@ class CryptoTrader:
             direction = price - previous_price
         # if current_price
         print(current_price) 
-        if current_price < 0.95 * self.config["sell-limit"]:
+        if current_price > (0.95 * self.config["sell-limit"]):
+            print("Trying to SELL")
             amount = self.config["sell-cap"] / current_price if ltc * current_price > self.config["sell-cap"] else ltc
             if amount != 0:
                 self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nSell limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["sell-limit"], current_price, direction))
                 #response = bitvavo.placeOrder(self.config["market"], 'sell', 'limit', { 'amount': amount, 'price': self.config["sell-limit"] })
-        if current_price > 1.05 * self.config["buy-limit"]:
+        if current_price < (1.05 * self.config["buy-limit"]):
+            print("Trying to BUY")
             amount = self.config["buy-cap"] / current_price if euro > self.config["buy-cap"] else euro / current_price
             if amount !=0:
                 self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nBuy limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["buy-limit"], current_price, direction))
