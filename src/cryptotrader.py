@@ -6,6 +6,7 @@ import sched, time
 import traceback
 import json
 import notificator
+import getpass
 
 from pythonBitvavoApi.bitvavo import Bitvavo
 
@@ -39,7 +40,7 @@ class CryptoTrader:
                 encryptedconfig = f.read()
                 try:
                     print("Enter configuration password:")
-                    password = input()
+                    password = getpass.getpass()
                     aescipher = AES.AESCipher(password)
                     pickledconfig_b64 = aescipher.decrypt(encryptedconfig)
                     config = pickle.loads(codecs.decode(pickledconfig_b64.encode(), "base64"))
@@ -109,7 +110,7 @@ class CryptoTrader:
         if current_price > 1.05 * self.config["buy-limit"]:
             amount = self.config["buy-cap"] / current_price if euro > self.config["buy-cap"] else euro / current_price
             if amount !=0:
-                self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nBuy limit: %s\nCurrent price: %d\nThe current direction: %f\n" % (amount, self.config["buy-limit"], current_price, direction))
+                self.notificator.notify("CryptoTrader will place an order:\nAmount: %s\nBuy limit: %s\nCurrent price: %f\nThe current direction: %f\n" % (amount, self.config["buy-limit"], current_price, direction))
                 #response = bitvavo.placeOrder(self.config["market"], 'buy', 'limit', { 'amount': amount, 'price': self.config["buy-limit"] })
         self.s.enter(self.config["polling-time"], 1, self.loop)
 

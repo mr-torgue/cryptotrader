@@ -6,6 +6,7 @@ import pickle
 import AES
 import codecs
 import sqlite3
+import getpass
 
 from datetime import datetime
 
@@ -57,7 +58,7 @@ pickledconfig_b64 = codecs.encode(pickle.dumps(config), "base64").decode()
 
 # encrypt bytes
 print("Configuration password:")
-key = input()
+key = getpass.getpass()
 aescipher = AES.AESCipher(key)
 encryptedconfig = aescipher.encrypt(pickledconfig_b64)
 

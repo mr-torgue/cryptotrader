@@ -1,3 +1,2 @@
-sqlite3
 python-bitvavo-api
 pycryptodome

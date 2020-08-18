@@ -21,7 +21,3 @@ Subject: CryptoTrader notification
         except smtplib.SMTPException as e:
             print(e)
             print("Error: unable to send email")
-
-
-x = Notificator("me@folmer.info")
-x.notify("test")

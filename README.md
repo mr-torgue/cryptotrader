@@ -20,11 +20,19 @@ A notification is send when placing an order.
 # installation and configuration
 
 * install python3 pip3 and sqlite3
+* adduser cryptotrader && passwd cryptotrader
+* su cryptotrader
+* cd ~
+* virtualenv -p /usr/local/bin/python3.7 .virtualenv
+* source .virtualenv/bin/activate
+* git clone https://github.com/mr-torgue/cryptotrader.git (-b dev)
+* cd cryptotrader
 * pip3 install -r requirements.txt
 * cd src
 * python3 configcreator.py
 
 Now the script can be run as "python3 cryptotrader.py". 
+
 
 ## install as a service
 Change the following template to install cryptotrader as a service. Save as cryptotrader.service in /lib/systemd/system/.
