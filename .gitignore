@@ -1,0 +1,4 @@
+*.enc
+*.db
+*.pyc
+*.log
