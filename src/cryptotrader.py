@@ -8,6 +8,7 @@ import json
 import notificator
 import getpass
 import logging
+
 import datetime
 
 from pythonBitvavoApi.bitvavo import Bitvavo
@@ -79,20 +80,21 @@ class CryptoTrader:
     main loop:
     '''
     def loop(self):
+        logging.info("TIME: %s" % (str(datetime.datetime.now())))
         last_sell = 0
         last_buy = 0
         interval = 86400 # 24*60*60 in seconds
         # get balance
         response = self.bitvavo.balance({})
         for item in response:
-            logging.info(json.dumps(item, indent=4))
+            logging.info("BALANCE %s:\n%s" % (item["symbol"], json.dumps(item, indent=4)))
             if item["symbol"] == "EUR":
                 euro = float(item["available"])
             elif item["symbol"] == "LTC":
                 ltc = float(item["available"])
         # get current LTC stock price and price history
         response = self.bitvavo.tickerPrice({"market" : self.config["market"]})
-        logging.info(json.dumps(response, indent=4))
+        logging.info("LTC PRICE:\n%s" % (json.dumps(response, indent=4)))
         current_price = float(response["price"])
         self.conn.execute("INSERT INTO HISTORY (market, value) VALUES (?, ?)", (self.config["market"], current_price))
         self.conn.commit()
@@ -105,7 +107,6 @@ class CryptoTrader:
             previous_price = prices[i-1][0]
             direction = price - previous_price
         # if current_price
-        logging.info(current_price) 
         current_time = datetime.datetime.now().timestamp()
         if current_price > (0.95 * self.config["sell-limit"]) and (current_time - last_sell) > interval:
             amount = round(self.config["sell-cap"] / current_price if ltc * current_price > self.config["sell-cap"] else ltc, 2)
