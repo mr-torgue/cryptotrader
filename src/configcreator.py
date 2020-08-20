@@ -7,7 +7,9 @@ import AES
 import codecs
 import sqlite3
 import getpass
+import json
 
+from pythonBitvavoApi.bitvavo import Bitvavo
 from datetime import datetime
 
 def create_db(filename):
@@ -28,7 +30,16 @@ mr-torgue is not liable or responsible for your losses.""")
 print("Enter config filename:")
 filename = input() 
 config = {}
-config["market"] = "LTC-EUR"
+bitvavo = Bitvavo()
+response = bitvavo.markets({})
+for i in range(len(response)):
+	print("%d: %s" % (i, response[i]["market"]))
+print("Specify market:")	
+index = int(input())
+print("You selected the following market:\n%s" % (json.dumps(response[index], indent=4)))
+config["market"] = (response[index])["market"]
+response = bitvavo.tickerPrice({"market" : config["market"]})
+print("The current price for this market is:\n%s" % (json.dumps(response, indent=4)))
 config["db"] = filename + ".db"
 print("Sell limit:")
 config["sell-limit"] = input() # 75
