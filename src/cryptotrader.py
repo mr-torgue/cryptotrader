@@ -112,7 +112,7 @@ class CryptoTrader:
             direction = price - previous_price
         # if current_price
         current_time = datetime.datetime.now().timestamp()
-        if current_price > (0.95 * self.config["sell-limit"]) and (current_time - last_sell) > interval:
+        if current_price > (0.99 * self.config["sell-limit"]) and (current_time - last_sell) > interval:
             amount = round(self.config["sell-cap"] / current_price if base * current_price > self.config["sell-cap"] else base, 2)
             logging.info("""Trying to SELL %f %s for %f %s a piece.
                 Total: %f
@@ -129,7 +129,7 @@ class CryptoTrader:
                 #response = self.bitvavo.placeOrder(self.config["market"], 'sell', 'limit', { 'amount': str(amount), 'price': str(self.config["sell-limit"]) })
                 last_sell = current_time
                 #logging.info(response)
-        if current_price < (1.05 * self.config["buy-limit"]) and (current_time - last_buy) > interval:
+        if current_price < (1.01 * self.config["buy-limit"]) and (current_time - last_buy) > interval:
             amount = round(self.config["buy-cap"] / current_price if quote > self.config["buy-cap"] else quote / current_price, 2)
             logging.info("""Trying to BUY %f %s for %f %s a piece.
                 Total: %f
