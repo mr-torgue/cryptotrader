@@ -18,7 +18,7 @@ The program loads a configuration file which specifies the following fields:
 | bitvavosecret | API secret for BitVavo |
 
 The configuration is encrypted using AES. Key has to be specified when the program starts. 
-CryptoTrader places an order if the current price gets within 5 percent of the limit. 
+CryptoTrader places an order if the current price gets within 1 percent of the limit. 
 A notification is send when placing an order. The caps specify the amount in euros which can be sold or bought every day.
 
 CryptoTrader uses a sqlite database to store price history. The database is created when executing the configcreator. It is stored as a .db file.
